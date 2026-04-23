@@ -12,9 +12,9 @@ async function migrate() {
 
   try {
     await connection.query(
-      `CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``,
+      `CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\`;`,
     );
-    await connection.query(`USE \`${process.env.DB_NAME}\``);
+    await connection.query(`USE \`${process.env.DB_NAME}\`;`);
 
     await connection.query(`
                 CREATE TABLE IF NOT EXISTS users(

@@ -20,6 +20,7 @@ async function migrate() {
                 CREATE TABLE IF NOT EXISTS users(
                     id VARCHAR(36) PRIMARY KEY,
                     name VARCHAR(50) NOT NULL,
+                    admin TINYINT(1) NOT NULL DEFAULT 0,
                     email VARCHAR(100) NOT NULL UNIQUE,
                     password VARCHAR(255) NOT NULL,
                     created_at DATETIME DEFAULT current_timestamp
@@ -35,7 +36,7 @@ async function migrate() {
                     enabled TINYINT(1) not null DEFAULT 0,
                     created_at DATETIME DEFAULT current_timestamp,
                     updated_at DATETIME DEFAULT current_timestamp ON UPDATE current_timestamp,
-                    UNIQUE(feature, environment)
+                    UNIQUE(user_id, feature, environment)
                 );
             `);
 

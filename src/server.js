@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { flagRoutes, authRoutes } from "./routes";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -6,6 +7,8 @@ const port = process.env.PORT;
 
 const app = createServer((req, res) => {
   console.log(req.url, req.method);
+
+  router(req, res);
 });
 
 app.listen(port, () => {

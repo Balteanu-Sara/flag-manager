@@ -1,7 +1,7 @@
 import { handleFlagRoutes } from "./routes/flagRoutes.js";
 import { handleAuthRoutes } from "./routes/authRoutes.js";
 import { handleAuditRoutes } from "./routes/auditRoutes.js";
-import { notFoundErr } from "./utils";
+import { notFoundErr } from "middlewares.js";
 
 function router(req, res) {
   const { pathname } = new URL(req.url, "http://localhost");

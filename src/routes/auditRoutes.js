@@ -1,22 +1,23 @@
-import { notFoundErr } from "../middlewares";
-
+import { notFoundErr } from "../middlewares.js";
+import {
+  showLogs,
+  filterLogs,
+  showUsersLogs,
+} from "../services/auditHandlers.js";
 function handleAuditRoutes(req, res) {
   const method = req.method;
   const { pathname } = new URL(req.url, "hhtp://localhost");
   const subpaths = pathname.split("/");
-
-  const isLogged = isLogged();
-
-  if (!isLogged) return notFoundErr(res);
+  console.log(subpaths);
 
   if (
     method === "GET" &&
     subpaths[0].toLowerCase() === "audit-log" &&
     subpaths.length === 1
   )
-    return showUserLogs(req, res);
+    return showLogs(req, res);
 
-  const params = subpaths[0].split("?");
+  let params = subpaths[0].split("?");
   if (
     method === "GET" &&
     params[0].toLowerCase() === "audit-log" &&
@@ -33,7 +34,7 @@ function handleAuditRoutes(req, res) {
   )
     return showUsersLogs(req, res);
 
-  const params = subpaths[1].split("?");
+  params = subpaths[1].split("?");
   if (
     method === "GET" &&
     subpaths[0].toLowerCase() === "audit-log" &&
@@ -45,3 +46,5 @@ function handleAuditRoutes(req, res) {
 
   return notFoundErr(res);
 }
+
+export { handleAuditRoutes };

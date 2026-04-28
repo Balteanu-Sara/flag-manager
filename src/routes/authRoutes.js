@@ -37,3 +37,5 @@ function handleAuthRoutes(req, res) {
 
   return notFoundErr(res);
 }
+
+export { handleAuthRoutes };

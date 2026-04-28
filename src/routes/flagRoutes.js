@@ -1,7 +1,7 @@
 import { notFoundErr } from "../middlewares.js";
 import {
   showFlags,
-  addFlag,
+  createFlag,
   showFlag,
   filterFlags,
   changeMetadata,
@@ -21,7 +21,7 @@ function handleFlagRoutes(req, res) {
 
     const params = subpaths[0].split("?")[1];
     if (method === "GET" && params) return filterFlags(req, res, params);
-    if (method === "POST") return addFlag(req, res);
+    if (method === "POST") return createFlag(req, res);
   }
 
   if (subpaths[1] && subpaths.length === 2) {
@@ -31,10 +31,16 @@ function handleFlagRoutes(req, res) {
     if (method === "DELETE") return deleteFlag(req, res, name);
   }
 
-  if (subpaths[2] && method === "PATCH") {
-    const toggle = decodeURIComponent(subpaths[2]).toLowerCase();
-    return toggleFlag(req, res, toggle);
+  if (
+    subpaths[2].toLowerCase() === "toggle" &&
+    subpaths.length === 3 &&
+    method === "PATCH"
+  ) {
+    const name = decodeURIComponent(subpaths[1]).toLowerCase();
+    return toggleFlag(req, res, name);
   }
 
   return notFoundErr(res);
 }
+
+export { handleFlagRoutes };

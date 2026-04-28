@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { flagRoutes, authRoutes } from "./routes";
+import { router } from "./router.js";
 import dotenv from "dotenv";
 
 dotenv.config();

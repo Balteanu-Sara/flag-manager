@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-async function migrate() {
+async function migrateSchema() {
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -20,7 +20,7 @@ async function migrate() {
                 CREATE TABLE IF NOT EXISTS users(
                     id VARCHAR(36) PRIMARY KEY,
                     name VARCHAR(50) NOT NULL,
-                    admin TINYINT(1) NOT NULL DEFAULT 0,
+                    admin BOOL NOT NULL DEFAULT 0,
                     email VARCHAR(100) NOT NULL UNIQUE,
                     password VARCHAR(255) NOT NULL,
                     created_at DATETIME DEFAULT current_timestamp
@@ -33,7 +33,7 @@ async function migrate() {
                     feature VARCHAR(100) NOT NULL,
                     user_id VARCHAR(36),
                     environment VARCHAR(20) NOT NULL DEFAULT 'development',
-                    enabled TINYINT(1) not null DEFAULT 0,
+                    enabled BOOL not null DEFAULT false,
                     created_at DATETIME DEFAULT current_timestamp,
                     updated_at DATETIME DEFAULT current_timestamp ON UPDATE current_timestamp,
                     UNIQUE(user_id, feature, environment)
@@ -46,19 +46,15 @@ async function migrate() {
                     flag_name VARCHAR(100) NOT NULL,
                     user_id VARCHAR(36),
                     action VARCHAR(50) NOT NULL,
-                    old_value TINYINT(1) NOT NULL,
-                    new_value TINYINT(1) NOT NULL,
                     changed_at DATETIME DEFAULT current_timestamp
                 );
             `);
   } catch (err) {
-    console.err("Error encountered at data migration");
-    process.exit(1);
+    console.error("Error encountered at schema migration: ", err);
   } finally {
     console.log("\nSuccessfully created database and tables!");
     await connection.end();
-    process.exit(0);
   }
 }
 
-await migrate();
+migrateSchema();

@@ -7,8 +7,9 @@ import {
 function handleAuditRoutes(req, res) {
   const method = req.method;
   const { pathname } = new URL(req.url, "hhtp://localhost");
+
   const subpaths = pathname.split("/");
-  console.log(subpaths);
+  subpaths.shift();
 
   if (
     method === "GET" &&

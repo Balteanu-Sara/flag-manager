@@ -1,5 +1,5 @@
 function sendData(data, res) {
-  res.writeHead(200, "Content-Type", "application/json");
+  res.writeHead(200, { "Content-Type": "application/json" });
   res.write(JSON.stringify({ data }));
   res.end();
 }

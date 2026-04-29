@@ -10,10 +10,11 @@ import {
 } from "../services/flagHandlers.js";
 
 function handleFlagRoutes(req, res) {
-  const { pathname } = new URL(req.method, "http://localhost");
+  const { pathname } = new URL(req.url, "http://localhost");
   const method = req.method;
 
   const subpaths = pathname.split("/");
+  subpaths.shift();
 
   if (subpaths.length === 1) {
     if (method === "GET" && subpaths[0].toLowerCase() === "flags")

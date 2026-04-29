@@ -14,6 +14,7 @@ function handleAuthRoutes(req, res) {
   const { pathname } = new URL(req.url, "http://localhost");
 
   const subpaths = pathname.split("/");
+  subpaths.shift();
 
   if (subpaths[1].toLowerCase() === "register-user" && method === "POST")
     return registerUser(req, res);

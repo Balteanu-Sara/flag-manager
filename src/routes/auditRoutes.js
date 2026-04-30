@@ -6,44 +6,29 @@ import {
 } from "../services/auditHandlers.js";
 function handleAuditRoutes(req, res) {
   const method = req.method;
-  const { pathname } = new URL(req.url, "hhtp://localhost");
-
-  const subpaths = pathname.split("/");
+  const subpaths = req.url.split("/");
   subpaths.shift();
 
-  if (
-    method === "GET" &&
-    subpaths[0].toLowerCase() === "audit-log" &&
-    subpaths.length === 1
-  )
+  let params = new URL(req.url, "http://localhost").search;
+  console.log(params);
+
+  if (method === "GET" && subpaths.length === 1 && !params)
     return showLogs(req, res);
 
-  let params = subpaths[0].split("?");
-  if (
-    method === "GET" &&
-    params[0].toLowerCase() === "audit-log" &&
-    params[1] &&
-    subpaths.length === 1
-  )
-    return filterLogs(req, res, params[1]);
+  if (method === "GET" && subpaths.length === 1 && params) {
+    console.log(params);
+    return filterLogs(req, res);
+  }
 
   if (
     method === "GET" &&
     subpaths[0].toLowerCase() === "audit-log" &&
-    subpaths[1].toLowerCase() === "users" &&
+    subpaths[1].toLowerCase().startsWith("users") &&
     subpaths.length === 2
-  )
-    return showUsersLogs(req, res);
-
-  params = subpaths[1].split("?");
-  if (
-    method === "GET" &&
-    subpaths[0].toLowerCase() === "audit-log" &&
-    params[0].toLowerCase() === "users" &&
-    subpaths.length === 2 &&
-    params.length === 2
-  )
-    return filterLogs(req, res, params[1]);
+  ) {
+    if (params) filterLogs(req, res);
+    else showUsersLogs(req, res);
+  }
 
   return notFoundErr(res);
 }

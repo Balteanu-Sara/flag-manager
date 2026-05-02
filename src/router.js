@@ -12,7 +12,8 @@ function router(req, res) {
     pathname.toLowerCase() === "/flags"
   )
     return handleFlagRoutes(req, res);
-  if (pathname.startsWith("/auth")) return handleAuthRoutes(req, res);
+  if (req.url.split("/")[1].toLowerCase() === "auth")
+    return handleAuthRoutes(req, res);
   if (
     pathname.startsWith("/audit-log?") ||
     pathname.startsWith("audit-log/") ||

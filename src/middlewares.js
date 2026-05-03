@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 function sendData(data, res) {
   res.writeHead(200, { "Content-Type": "application/json" });
   res.write(JSON.stringify({ data }));
@@ -20,7 +23,7 @@ function notFoundErr(res) {
 }
 
 async function parseBody(req) {
-  return new Promise(() => {
+  return new Promise((resolve, reject) => {
     let body = "";
 
     req.on("data", (chunk) => (body += chunk.toString()));
@@ -31,10 +34,9 @@ async function parseBody(req) {
         resolve(JSON.parse(body));
       } catch (err) {
         reject(err);
-        serverErr(err);
       }
     });
   });
 }
 
-export { sendData, serverErr, notFoundErr, parseBody };
+export { sendData, sendResponse, serverErr, notFoundErr, parseBody };

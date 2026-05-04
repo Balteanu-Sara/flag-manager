@@ -22,7 +22,6 @@ async function registerUser(req, res, admin = false) {
     return sendResponse("Password must be at least 13 characters.", 400, res);
 
   try {
-    console.log("am trecut de erori");
     const [rows] = await db.query(
       `
       SELECT * FROM users WHERE email = ?;
@@ -57,7 +56,43 @@ async function registerUser(req, res, admin = false) {
 
 function createAdminRequest(req, res) {}
 
-async function login(req, res) {}
+async function login(req, res) {
+  const body = await parseBody(req);
+  if (!body.email || !body.password)
+    return sendResponse("Email and password are required!", 400, res);
+
+  try {
+    const [rows] = await db.query(
+      `
+        SELECT * FROM users WHERE email = ?
+      `,
+      [body.email],
+    );
+    if (rows.length === 0) return sendResponse("Email is invalid", 400, res);
+
+    const isUser = await bcrypt.compare(body.password, rows[0].password);
+    if (!isUser) return sendResponse("Password is incorrect!", 400, res);
+
+    const token = jwt.sign(
+      {
+        jti: uuidv4(),
+        id: rows[0].id,
+        email: rows[0].email,
+        admin: rows[0].admin,
+      },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "12h" },
+    );
+
+    return sendResponse(
+      `Logged in successfully! To access resources, use unique token ${token}`,
+      200,
+      res,
+    );
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
 
 function logout(req, res) {}
 

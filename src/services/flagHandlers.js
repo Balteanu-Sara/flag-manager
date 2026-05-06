@@ -1,5 +1,5 @@
 import { db } from "../config/createPool.js";
-import { sendData, serverErr } from "../middlewares.js";
+import { isLogged, sendData, serverErr } from "../middlewares.js";
 
 function parseParameters(url) {
   const params = new URL(url, "http://localhost").searchParams;
@@ -36,37 +36,56 @@ function parseParameters(url) {
 }
 
 async function showFlags(req, res) {
-  let isLogged = false;
+  const user = isLogged(req);
 
   try {
-    if (!isLogged) {
+    if (!user) {
       const [rows] = await db.query(`
                 SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE user_id = 'admin'; 
                     `);
 
       return sendData(rows, res);
     }
+
+    const [rows] = await db.query(
+      `
+        SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ?;
+      `,
+      [user.id],
+    );
+
+    return sendData(rows, res);
   } catch (err) {
     return serverErr(err, res);
   }
 }
 
 async function filterFlags(req, res) {
-  let isLogged = false;
+  const user = isLogged(req);
 
   const { conditions, variables } = parseParameters(req.url);
 
   try {
-    if (!isLogged) {
+    if (!user) {
       const [rows] = await db.query(
         `
-        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} ORDER BY created_at DESC 
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} ORDER BY created_at DESC; 
         `,
         variables,
       );
 
       return sendData(rows, res);
     }
+
+    variables.push(user.id);
+    const [rows] = await db.query(
+      `
+      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} AND user_id = ? ORDER BY created_at DESC;
+      `,
+      variables,
+    );
+
+    return sendData(rows, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -75,10 +94,10 @@ async function filterFlags(req, res) {
 async function createFlag(req, res) {}
 
 async function showFlag(req, res, name) {
-  let isLogged = false;
+  const user = isLogged(req);
 
   try {
-    if (!isLogged) {
+    if (!user) {
       const [rows] = await db.query(
         `
           SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE feature LIKE ?;
@@ -88,6 +107,15 @@ async function showFlag(req, res, name) {
 
       return sendData(rows, res);
     }
+
+    const [rows] = await db.query(
+      `
+        SELECT feature, environment, enabled, created_at, updated_at from flags WHERE feature LIKE ? AND user_id = ?; 
+      `,
+      [`%${name}%`, `${user.id}`],
+    );
+
+    return sendData(rows, res);
   } catch (err) {
     serverErr(err, res);
   }

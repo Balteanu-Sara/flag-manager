@@ -1,5 +1,5 @@
 import { db } from "../config/createPool.js";
-import { sendData, serverErr } from "../middlewares.js";
+import { sendData, serverErr, isLogged, sendResponse } from "../middlewares.js";
 
 function parseParameters(url) {
   const params = new URL(url, "http://localhost").searchParams;
@@ -33,31 +33,55 @@ function parseParameters(url) {
 function createLog() {}
 
 async function showLogs(req, res) {
-  let isLogged = false;
+  const user = isLogged(req);
 
   try {
-    if (!isLogged) {
+    if (!user) {
       const [rows] = await db.query(`
                 SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE user_id = 'admin';
                 `);
       return sendData(rows, res);
     }
+
+    const [rows] = await db.query(
+      `
+        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ?;
+      `,
+      [user.id],
+    );
+
+    return sendData(rows, res);
   } catch (err) {
     console.error("Error encountered showing logs: ", err);
     return serverErr(err, res);
   }
 }
 
-async function filterLogs(req, res) {
-  let isLogged = false;
+async function filterLogs(req, res, forUsers = false) {
+  let user = isLogged(req);
 
   const { conditions, variables } = parseParameters(req.url);
 
   try {
-    if (!isLogged) {
+    if (!user) {
       const [rows] = await db.query(
         `
           SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE ${conditions} ORDER BY changed_at DESC;
+        `,
+        variables,
+      );
+
+      return sendData(rows, res);
+    }
+
+    if (forUsers) {
+      if (!user.admin) return sendResponse("Unauthorized", 401, res);
+      console.log("vedem");
+    } else {
+      variables.push(user.id);
+      const [rows] = await db.query(
+        `
+        SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} AND user_id = ? ORDER BY changed_at DESC;
         `,
         variables,
       );

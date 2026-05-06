@@ -7,10 +7,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-function isLogged() {}
-
 async function registerUser(req, res, admin = false) {
-  console.log("am intrat in register");
   const body = await parseBody(req);
   console.log(body);
 
@@ -103,7 +100,6 @@ function changeMetadata(req, res, field) {}
 function deleteAccount(req, res) {}
 
 export {
-  isLogged,
   registerUser,
   createAdminRequest,
   login,

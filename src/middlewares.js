@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 dotenv.config();
 
 function sendData(data, res) {
@@ -39,4 +40,17 @@ async function parseBody(req) {
   });
 }
 
-export { sendData, sendResponse, serverErr, notFoundErr, parseBody };
+function isLogged(req) {
+  const header = req.headers["authorization"];
+
+  if (!header || !header.startsWith("Bearer ")) return null;
+
+  try {
+    return jwt.verify(header.split(" ")[1], process.env.JWT_SECRET_KEY);
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+}
+
+export { sendData, sendResponse, serverErr, notFoundErr, parseBody, isLogged };

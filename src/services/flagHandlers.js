@@ -1,5 +1,15 @@
 import { db } from "../config/createPool.js";
-import { isLogged, sendData, serverErr } from "../middlewares.js";
+import { v4 as uuidv4 } from "uuid";
+import {
+  authenticate,
+  isLogged,
+  notFoundErr,
+  sendData,
+  serverErr,
+  parseBody,
+  sendResponse,
+} from "../middlewares.js";
+import { createLog } from "./auditHandlers.js";
 
 function parseParameters(url) {
   const params = new URL(url, "http://localhost").searchParams;
@@ -91,7 +101,61 @@ async function filterFlags(req, res) {
   }
 }
 
-async function createFlag(req, res) {}
+async function createFlag(req, res) {
+  const user = authenticate(req, res);
+
+  if (!user) return;
+
+  try {
+    const body = await parseBody(req);
+    if (!body.hasOwnProperty("feature"))
+      return sendResponse("Feature key is required!", 400, res);
+    const variables = [body.feature, user.id];
+    let columns = "";
+    if (body.hasOwnProperty("environment")) {
+      if (
+        body.environment !== "development" &&
+        body.environment !== "staging" &&
+        body.environment !== "production"
+      )
+        return sendResponse(
+          "Environment must be development, staging or production.",
+          400,
+          res,
+        );
+      variables.push(body.environment);
+      columns = columns + ", environment";
+    }
+    if (body.hasOwnProperty("enabled")) {
+      if (body.enabled !== true && body.enabled !== false)
+        return sendResponse("Enabled must be true or false.", 400, res);
+      variables.push(body.enabled);
+      columns = columns + ", enabled";
+    }
+    const parameters = new Array(Object.keys(body).length + 1)
+      .fill(", ?")
+      .join("");
+
+    await db.query(
+      `
+          INSERT INTO flags (id, feature, user_id${columns} ) VALUES ('${uuidv4()}'${parameters});
+          `,
+      variables,
+    );
+
+    await createLog(user, body.feature, res);
+
+    return sendResponse(
+      "Flag has been created! Check it by accessing /flags/:name",
+      201,
+      res,
+    );
+  } catch (err) {
+    if (err.sqlMessage && err.sqlMessage.startsWith("Duplicate entry '"))
+      sendResponse("This flag already exists.", 400, res);
+    else serverErr(err, res);
+  }
+}
 
 async function showFlag(req, res, name) {
   const user = isLogged(req);

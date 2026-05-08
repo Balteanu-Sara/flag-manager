@@ -1,4 +1,5 @@
 import { db } from "../config/createPool.js";
+import { v4 as uuidv4 } from "uuid";
 import { sendData, serverErr, isLogged, sendResponse } from "../middlewares.js";
 
 function parseParameters(url) {
@@ -30,7 +31,20 @@ function parseParameters(url) {
   }
 }
 
-function createLog() {}
+async function createLog(user, feature, res) {
+  try {
+    await db.query(
+      `
+        INSERT INTO audit_log(id, flag_name, user_id, action) VALUES ('${uuidv4()}', ?, ?, 'created');
+      `,
+      [feature, user.id],
+    );
+
+    console.log(`Log has been created with the '${feature}' feature flag.`);
+  } catch (err) {
+    return serverErr(err, res);
+  }
+}
 
 async function showLogs(req, res) {
   const user = isLogged(req);
@@ -52,8 +66,7 @@ async function showLogs(req, res) {
 
     return sendData(rows, res);
   } catch (err) {
-    console.error("Error encountered showing logs: ", err);
-    return serverErr(err, res);
+    serverErr(err, res);
   }
 }
 

@@ -53,4 +53,29 @@ function isLogged(req) {
   }
 }
 
-export { sendData, sendResponse, serverErr, notFoundErr, parseBody, isLogged };
+function authenticate(req, res) {
+  const header = req.headers["authorization"];
+
+  if (!header || !header.startsWith("Bearer ")) {
+    sendResponse("Header is invalid or non-existent.", 401, res);
+    return null;
+  }
+
+  const token = header.split(" ")[1];
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET_KEY);
+  } catch (err) {
+    sendResponse("Token is invalid or expired.", 401, res);
+    return null;
+  }
+}
+
+export {
+  sendData,
+  sendResponse,
+  serverErr,
+  notFoundErr,
+  parseBody,
+  isLogged,
+  authenticate,
+};

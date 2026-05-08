@@ -36,7 +36,7 @@ async function migrateSchema() {
                     enabled BOOL not null DEFAULT false,
                     created_at DATETIME DEFAULT current_timestamp,
                     updated_at DATETIME DEFAULT current_timestamp ON UPDATE current_timestamp,
-                    UNIQUE(user_id, feature, environment)
+                    UNIQUE(user_id, feature)
                 );
             `);
 

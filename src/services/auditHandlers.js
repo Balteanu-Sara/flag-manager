@@ -31,13 +31,13 @@ function parseParameters(url) {
   }
 }
 
-async function createLog(user, feature, res) {
+async function createLog(user, feature, action, res) {
   try {
     await db.query(
       `
-        INSERT INTO audit_log(id, flag_name, user_id, action) VALUES ('${uuidv4()}', ?, ?, 'created');
+        INSERT INTO audit_log(id, flag_name, user_id, action) VALUES ('${uuidv4()}', ?, ?, ?);
       `,
-      [feature, user.id],
+      [feature, user.id, action],
     );
 
     console.log(`Log has been created with the '${feature}' feature flag.`);

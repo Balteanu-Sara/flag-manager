@@ -64,9 +64,9 @@ async function showFlags(req, res) {
       [user.id],
     );
 
-    return sendData(rows, res);
+    sendData(rows, res);
   } catch (err) {
-    return serverErr(err, res);
+    serverErr(err, res);
   }
 }
 
@@ -95,7 +95,7 @@ async function filterFlags(req, res) {
       variables,
     );
 
-    return sendData(rows, res);
+    sendData(rows, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -109,7 +109,7 @@ async function createFlag(req, res) {
   try {
     const body = await parseBody(req);
     if (!body.hasOwnProperty("feature"))
-      return sendResponse("Feature key is required!", 400, res);
+      return sendResponse("Feature key is required!", 404, res);
     const variables = [body.feature, user.id];
     let columns = "";
     if (body.hasOwnProperty("environment")) {
@@ -143,9 +143,9 @@ async function createFlag(req, res) {
       variables,
     );
 
-    await createLog(user, body.feature, res);
+    await createLog(user, body.feature, "created", res);
 
-    return sendResponse(
+    sendResponse(
       "Flag has been created! Check it by accessing /flags/:name",
       201,
       res,
@@ -179,7 +179,7 @@ async function showFlag(req, res, name) {
       [`%${name}%`, `${user.id}`],
     );
 
-    return sendData(rows, res);
+    sendData(rows, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -187,9 +187,63 @@ async function showFlag(req, res, name) {
 
 async function changeMetadata(req, res, name) {}
 
-async function deleteFlag(req, res, name) {}
+async function deleteFlag(req, res, name) {
+  const user = authenticate(req, res);
 
-async function toggleFlag(req, res, name) {}
+  if (!user) return;
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM flags WHERE feature = ? AND user_id = ? ;`,
+      [name, user.id],
+    );
+
+    if (!rows.length) return notFoundErr(res);
+
+    await db.query(`DELETE FROM flags WHERE user_id = ? AND feature = ? ;`, [
+      user.id,
+      name,
+    ]);
+    await createLog(user, name, "deleted", res);
+
+    sendResponse(`Flag ${name} has been removed!`, 204, res);
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
+
+async function toggleFlag(req, res, name) {
+  const user = authenticate(req, res);
+
+  if (!user) return;
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM flags WHERE feature = ? AND user_id = ?;`,
+      [name, user.id],
+    );
+
+    if (!rows.length) return notFoundErr(res);
+
+    const action = rows[0].enabled ? "toggled_off" : "toggled_on";
+
+    await db.query(
+      `
+        UPDATE flags SET enabled = NOT enabled WHERE user_id = ? AND feature = ?
+      `,
+      [user.id, name],
+    );
+
+    await createLog(user, name, action, res);
+    sendResponse(
+      "Flag has been toggled! Check it by accessing /flags/:name",
+      204,
+      res,
+    );
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
 
 export {
   showFlag,

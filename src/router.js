@@ -1,7 +1,7 @@
 import { handleFlagRoutes } from "./routes/flagRoutes.js";
 import { handleAuthRoutes } from "./routes/authRoutes.js";
 import { handleAuditRoutes } from "./routes/auditRoutes.js";
-import { notFoundErr } from "./middlewares.js";
+import { badRequestErr } from "./middlewares.js";
 
 function router(req, res) {
   const pathname = req.url;
@@ -21,7 +21,7 @@ function router(req, res) {
   )
     return handleAuditRoutes(req, res);
 
-  return notFoundErr(res);
+  return badRequestErr(res);
 }
 
 export { router };

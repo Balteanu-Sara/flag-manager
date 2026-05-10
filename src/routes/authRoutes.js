@@ -1,4 +1,4 @@
-import { notFoundErr } from "../middlewares.js";
+import { badRequestErr } from "../middlewares.js";
 import {
   registerUser,
   createAdminRequest,
@@ -47,7 +47,7 @@ function handleAuthRoutes(req, res) {
 
   if (subpaths[1].toLowerCase() === "logout") return logout(req, res);
 
-  return notFoundErr(res);
+  return badRequestErr(res);
 }
 
 export { handleAuthRoutes };

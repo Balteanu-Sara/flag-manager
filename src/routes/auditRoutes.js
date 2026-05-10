@@ -1,4 +1,4 @@
-import { notFoundErr } from "../middlewares.js";
+import { badRequestErr } from "../middlewares.js";
 import {
   showLogs,
   filterLogs,
@@ -29,7 +29,7 @@ function handleAuditRoutes(req, res) {
     else showUsersLogs(req, res);
   }
 
-  return notFoundErr(res);
+  return badRequestErr(res);
 }
 
 export { handleAuditRoutes };

@@ -23,6 +23,10 @@ function notFoundErr(res) {
   sendResponse("Not Found", 404, res);
 }
 
+function badRequestErr(res) {
+  sendResponse("Bad request", 400, res);
+}
+
 async function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -75,6 +79,7 @@ export {
   sendResponse,
   serverErr,
   notFoundErr,
+  badRequestErr,
   parseBody,
   isLogged,
   authenticate,

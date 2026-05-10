@@ -1,4 +1,4 @@
-import { notFoundErr } from "../middlewares.js";
+import { badRequestErr } from "../middlewares.js";
 import {
   showFlags,
   createFlag,
@@ -30,15 +30,15 @@ function handleFlagRoutes(req, res) {
   }
 
   if (
-    subpaths[2].toLowerCase() === "toggle" &&
     subpaths.length === 3 &&
+    subpaths[2].toLowerCase() === "toggle" &&
     method === "PATCH"
   ) {
     const name = decodeURIComponent(subpaths[1]).toLowerCase();
     return toggleFlag(req, res, name);
   }
 
-  return notFoundErr(res);
+  return badRequestErr(res);
 }
 
 export { handleFlagRoutes };

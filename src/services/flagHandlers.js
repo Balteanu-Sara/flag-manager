@@ -51,7 +51,7 @@ async function showFlags(req, res) {
   try {
     if (!user) {
       const [rows] = await db.query(`
-                SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE user_id = 'admin'; 
+                SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE user_id = 'admin' ORDER BY created_at DESC; 
                     `);
 
       return sendData(rows, res);
@@ -59,7 +59,7 @@ async function showFlags(req, res) {
 
     const [rows] = await db.query(
       `
-        SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ?;
+        SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ? ORDER BY created_at DESC;
       `,
       [user.id],
     );
@@ -185,7 +185,99 @@ async function showFlag(req, res, name) {
   }
 }
 
-async function changeMetadata(req, res, name) {}
+async function changeMetadata(req, res, name) {
+  const user = authenticate(req, res);
+  const body = await parseBody(req);
+
+  if (!user) return;
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM flags WHERE feature = ? AND user_id = ? ;`,
+      [name, user.id],
+    );
+
+    console.log(rows);
+    if (!rows.length) return notFoundErr(res);
+    if (
+      !body.hasOwnProperty("feature") &&
+      !body.hasOwnProperty("environment") &&
+      !body.hasOwnProperty("enabled")
+    )
+      return sendResponse("No valid column provided for update.", 400, res);
+    let columns = ``;
+    const variables = [];
+    let action = `updated`;
+    if (body.hasOwnProperty("feature")) {
+      const [rows] = await db.query(
+        `SELECT * FROM flags WHERE feature = ? AND user_id = ? ;`,
+        [body.feature, user.id],
+      );
+
+      if (rows.length > 0)
+        return sendResponse(
+          "Flag with provided name already exists!",
+          400,
+          res,
+        );
+      action += ` (${name})`;
+      columns += "feature = ?";
+      variables.push(body.feature);
+    }
+
+    if (body.hasOwnProperty("environment")) {
+      if (
+        body.environment !== "development" &&
+        body.environment !== "staging" &&
+        body.environment !== "production"
+      )
+        return sendResponse(
+          "Valid values for environment are development, staging or production.",
+          400,
+          res,
+        );
+
+      columns += columns.length ? ", environment = ?" : "environment = ?";
+      variables.push(body.environment);
+    }
+
+    if (body.hasOwnProperty("enabled")) {
+      if (body.enabled !== false && body.enabled !== true)
+        return sendResponse(
+          "Valid values for enabled are true or false.",
+          400,
+          res,
+        );
+
+      if (
+        !body.hasOwnProperty("feature") &&
+        !body.hasOwnProperty("environment")
+      )
+        if (body.enabled) action = "toggled_on";
+        else action = "toggled_off";
+      columns += columns.length ? ", enabled = ?" : "enabled = ?";
+      variables.push(body.enabled);
+    }
+    variables.push(user.id);
+    variables.push(name);
+
+    await db.query(
+      `
+      UPDATE flags SET ${columns} WHERE user_id = ? AND feature = ?;
+      `,
+      variables,
+    );
+
+    if (body.hasOwnProperty("feature")) name = body.feature;
+    await createLog(user, name, action, res);
+
+    sendResponse("Flag has been updtaed! Check /flags/:name", 204, res);
+  } catch (err) {
+    if (err.sqlMessage && err.sqlMessage.startsWith("Duplicate entry '"))
+      sendResponse("This flag already exists.", 400, res);
+    else serverErr(err, res);
+  }
+}
 
 async function deleteFlag(req, res, name) {
   const user = authenticate(req, res);

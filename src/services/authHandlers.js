@@ -1,15 +1,24 @@
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { sendResponse, parseBody, serverErr } from "../middlewares.js";
+import {
+  sendResponse,
+  parseBody,
+  serverErr,
+  authenticate,
+  badRequestErr,
+  isLogged,
+} from "../middlewares.js";
 import { db } from "../config/createPool.js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 async function registerUser(req, res, admin = false) {
+  const user = await isLogged(req, res);
+  if (user) return badRequestErr(res);
+
   const body = await parseBody(req);
-  console.log(body);
 
   if (!body.password || !body.email || !body.name) {
     return sendResponse("Email, name and password are required!", 400, res);
@@ -54,8 +63,11 @@ async function registerUser(req, res, admin = false) {
 function createAdminRequest(req, res) {}
 
 async function login(req, res) {
+  const user = await isLogged(req, res);
+  if (user) return badRequestErr(res);
+
   const body = await parseBody(req);
-  if (!body.email || !body.password)
+  if (!body.hasOwnProperty("email") && !body.hasOwnProperty("password"))
     return sendResponse("Email and password are required!", 400, res);
 
   try {
@@ -91,13 +103,48 @@ async function login(req, res) {
   }
 }
 
-function logout(req, res) {}
+async function logout(req, res, jti = null) {
+  let jtiToken = jti;
+  if (!jti) {
+    const user = await authenticate(req, res);
+    if (!user) return;
+    jtiToken = user.jti;
+  }
+
+  try {
+    await db.query(`INSERT INTO invalid_tokens(token) VALUES (?);`, [jtiToken]);
+    console.log("gata log out");
+
+    if (!jti) sendResponse("Successfully logged out!", 200, res);
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
 
 function showMetadata(req, res) {}
 
 function changeMetadata(req, res, field) {}
 
-function deleteAccount(req, res) {}
+async function deleteAccount(req, res) {
+  const user = await authenticate(req, res);
+
+  if (!user) return;
+
+  try {
+    await logout(req, res, user.jti);
+
+    await db.query(`DELETE FROM users WHERE id=? ;`, [user.id]);
+    console.log("sters din users");
+    await db.query(`DELETE FROM flags WHERE user_id=? ;`, [user.id]);
+    console.log("sters din flags");
+    await db.query(`DELETE FROM audit_log WHERE user_id=? ;`, [user.id]);
+    console.log("sters din audit_log");
+
+    sendResponse("User account has been deleted!", 200, res);
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
 
 export {
   registerUser,

@@ -46,7 +46,7 @@ function parseParameters(url) {
 }
 
 async function showFlags(req, res) {
-  const user = isLogged(req);
+  const user = await isLogged(req);
 
   try {
     if (!user) {
@@ -71,7 +71,7 @@ async function showFlags(req, res) {
 }
 
 async function filterFlags(req, res) {
-  const user = isLogged(req);
+  const user = await isLogged(req);
 
   const { conditions, variables } = parseParameters(req.url);
 
@@ -102,7 +102,7 @@ async function filterFlags(req, res) {
 }
 
 async function createFlag(req, res) {
-  const user = authenticate(req, res);
+  const user = await authenticate(req, res);
 
   if (!user) return;
 
@@ -158,7 +158,7 @@ async function createFlag(req, res) {
 }
 
 async function showFlag(req, res, name) {
-  const user = isLogged(req);
+  const user = await isLogged(req);
 
   try {
     if (!user) {
@@ -186,7 +186,7 @@ async function showFlag(req, res, name) {
 }
 
 async function changeMetadata(req, res, name) {
-  const user = authenticate(req, res);
+  const user = await authenticate(req, res);
   const body = await parseBody(req);
 
   if (!user) return;
@@ -197,7 +197,6 @@ async function changeMetadata(req, res, name) {
       [name, user.id],
     );
 
-    console.log(rows);
     if (!rows.length) return notFoundErr(res);
     if (
       !body.hasOwnProperty("feature") &&
@@ -271,7 +270,7 @@ async function changeMetadata(req, res, name) {
     if (body.hasOwnProperty("feature")) name = body.feature;
     await createLog(user, name, action, res);
 
-    sendResponse("Flag has been updtaed! Check /flags/:name", 204, res);
+    sendResponse("Flag has been updated! Check /flags/:name", 200, res);
   } catch (err) {
     if (err.sqlMessage && err.sqlMessage.startsWith("Duplicate entry '"))
       sendResponse("This flag already exists.", 400, res);
@@ -280,7 +279,7 @@ async function changeMetadata(req, res, name) {
 }
 
 async function deleteFlag(req, res, name) {
-  const user = authenticate(req, res);
+  const user = await authenticate(req, res);
 
   if (!user) return;
 
@@ -298,14 +297,14 @@ async function deleteFlag(req, res, name) {
     ]);
     await createLog(user, name, "deleted", res);
 
-    sendResponse(`Flag ${name} has been removed!`, 204, res);
+    sendResponse(`Flag ${name} has been removed!`, 200, res);
   } catch (err) {
     serverErr(err, res);
   }
 }
 
 async function toggleFlag(req, res, name) {
-  const user = authenticate(req, res);
+  const user = await authenticate(req, res);
 
   if (!user) return;
 
@@ -329,7 +328,7 @@ async function toggleFlag(req, res, name) {
     await createLog(user, name, action, res);
     sendResponse(
       "Flag has been toggled! Check it by accessing /flags/:name",
-      204,
+      200,
       res,
     );
   } catch (err) {

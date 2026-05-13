@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { db } from "./config/createPool.js";
 import jwt from "jsonwebtoken";
 dotenv.config();
 
@@ -44,20 +45,29 @@ async function parseBody(req) {
   });
 }
 
-function isLogged(req) {
+async function isLogged(req) {
   const header = req.headers["authorization"];
 
   if (!header || !header.startsWith("Bearer ")) return null;
 
+  const token = header.split(" ")[1];
   try {
-    return jwt.verify(header.split(" ")[1], process.env.JWT_SECRET_KEY);
+    const user = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const [rows] = await db.query(
+      `SELECT token FROM invalid_tokens WHERE token=?`,
+      [user.jti],
+    );
+    if (rows.length) return null;
+
+    return user;
   } catch (err) {
     console.error(err);
     return null;
   }
 }
 
-function authenticate(req, res) {
+async function authenticate(req, res) {
   const header = req.headers["authorization"];
 
   if (!header || !header.startsWith("Bearer ")) {
@@ -67,7 +77,21 @@ function authenticate(req, res) {
 
   const token = header.split(" ")[1];
   try {
-    return jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const user = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const [rows] = await db.query(
+      `
+        SELECT token FROM invalid_tokens WHERE token=?
+      `,
+      [user.jti],
+    );
+
+    if (rows.length) {
+      sendResponse("Token in invalid!", 401, res);
+      return null;
+    }
+
+    return user;
   } catch (err) {
     sendResponse("Token is invalid or expired.", 401, res);
     return null;

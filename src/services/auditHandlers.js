@@ -1,6 +1,12 @@
 import { db } from "../config/createPool.js";
 import { v4 as uuidv4 } from "uuid";
-import { sendData, serverErr, isLogged, sendResponse } from "../middlewares.js";
+import {
+  sendData,
+  serverErr,
+  isLogged,
+  sendResponse,
+  authenticate,
+} from "../middlewares.js";
 
 function parseParameters(url) {
   const params = new URL(url, "http://localhost").searchParams;
@@ -9,18 +15,18 @@ function parseParameters(url) {
 
   try {
     if (params.get("flag_name")) {
-      conditions += `AND flag_name LIKE ?`;
+      conditions += `flag_name LIKE ?`;
       variables.push(`%${params.get("flag_name")}%`);
     }
     if (params.get("user")) {
       console.log("vedem");
     }
     if (params.get("action")) {
-      conditions += `AND action LIKE ?`;
+      conditions += `${conditions.length > 0 ? " AND " : ""}action LIKE ?`;
       variables.push(`%${params.get("action")}%`);
     }
     if (params.get("changed_at")) {
-      condtions += `AND changed_at LIKE ?`;
+      condtions += `${conditions.length > 0 ? " AND " : ""}changed_at LIKE ?`;
       variables.push(`%${params.get("changed_at")}%`);
     }
   } catch (err) {
@@ -89,12 +95,13 @@ async function filterLogs(req, res, forUsers = false) {
 
     if (forUsers) {
       if (!user.admin) return sendResponse("Unauthorized", 401, res);
+
       console.log("vedem");
     } else {
-      variables.unshift(user.id);
+      variables.shift(user.id);
       const [rows] = await db.query(
         `
-        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ? ${conditions} ORDER BY changed_at DESC;
+        SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions + (conditions.length ? " AND" : "")} user_id = ? ORDER BY changed_at DESC;
         `,
         variables,
       );
@@ -106,6 +113,22 @@ async function filterLogs(req, res, forUsers = false) {
   }
 }
 
-async function showUsersLogs(req, res) {}
+async function showUsersLogs(req, res) {
+  const user = await authenticate(req, res);
+  if (!user) return;
+
+  if (user.admin !== 1) return sendResponse("Unauthorized", 401, res);
+
+  try {
+    const [rows] = await db.query(`
+        SELECT * FROM audit_log WHERE user_id <> 'admin' ORDER BY changed_at DESC;
+      `);
+
+    sendData(rows, res);
+  } catch (err) {
+    console.log("am intrat in paine");
+    serverErr(err, res);
+  }
+}
 
 export { createLog, showLogs, filterLogs, showUsersLogs };

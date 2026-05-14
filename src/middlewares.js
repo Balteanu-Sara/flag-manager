@@ -81,7 +81,7 @@ async function authenticate(req, res) {
 
     const [rows] = await db.query(
       `
-        SELECT token FROM invalid_tokens WHERE token=?
+        SELECT token FROM invalid_tokens WHERE token=?;
       `,
       [user.jti],
     );

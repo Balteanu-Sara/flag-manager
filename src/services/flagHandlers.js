@@ -90,7 +90,7 @@ async function filterFlags(req, res) {
     variables.push(user.id);
     const [rows] = await db.query(
       `
-      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} AND user_id = ? ORDER BY created_at DESC;
+      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions + (conditions.length ? " AND" : "")} user_id = ? ORDER BY created_at DESC;
       `,
       variables,
     );

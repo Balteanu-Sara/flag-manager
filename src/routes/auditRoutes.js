@@ -25,8 +25,8 @@ function handleAuditRoutes(req, res) {
     subpaths[1].toLowerCase().startsWith("users") &&
     subpaths.length === 2
   ) {
-    if (params) filterLogs(req, res, true);
-    else showUsersLogs(req, res);
+    if (params) return filterLogs(req, res, true);
+    else return showUsersLogs(req, res);
   }
 
   return badRequestErr(res);

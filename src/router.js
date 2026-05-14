@@ -16,7 +16,7 @@ function router(req, res) {
     return handleAuthRoutes(req, res);
   if (
     pathname.startsWith("/audit-log?") ||
-    pathname.startsWith("audit-log/") ||
+    pathname.startsWith("/audit-log/") ||
     pathname.toLowerCase() === "/audit-log"
   )
     return handleAuditRoutes(req, res);

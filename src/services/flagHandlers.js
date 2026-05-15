@@ -19,23 +19,23 @@ function parseParameters(url) {
   try {
     if (params.get("feature")) {
       conditions += `feature LIKE ?`;
-      variables.push(`%${params.get("feature")}%`);
+      variables.push(`%${params.get("feature").trim()}%`);
     }
     if (params.get("environment")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}environment LIKE ?`;
-      variables.push(params.get("environment"));
+      variables.push(params.get("environment").trim());
     }
     if (params.get("enabled")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}enabled = ?`;
-      variables.push(params.get("enabled"));
+      variables.push(params.get("enabled").trim() === "true" ? 1 : 0);
     }
     if (params.get("created_at")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}created_at LIKE ?`;
-      variables.push(`%${params.get("created_at")}%`);
+      variables.push(`%${params.get("created_at").trim()}%`);
     }
     if (params.get("updated_at")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}updated_at LIKE ?`;
-      variables.push(`%${params.get("updated_at")}%`);
+      variables.push(`%${params.get("updated_at").trim()}%`);
     }
   } catch (err) {
     console.error("Error encountered when parsing parameters: ", err);

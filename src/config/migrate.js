@@ -15,6 +15,7 @@ async function migrateSchema() {
       `CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\`;`,
     );
     await connection.query(`USE \`${process.env.DB_NAME}\`;`);
+    await connection.query(`SET GLOBAL event_scheduler = ON;`);
 
     await connection.query(`
                 CREATE TABLE IF NOT EXISTS users(
@@ -49,6 +50,21 @@ async function migrateSchema() {
                     changed_at DATETIME DEFAULT current_timestamp
                 );
             `);
+
+    await connection.query(`
+                CREATE TABLE IF NOT EXISTS invalid_tokens(
+                    token VARCHAR(36) NOT NULL,
+                    invalidated_at DATETIME DEFAULT current_timestamp
+                ); 
+            `);
+
+    await connection.query(`
+                CREATE EVENT remove_tokens
+                ON SCHEDULE 
+                  EVERY 1 HOUR
+                DO
+                  DELETE FROM invalid_tokens WHERE invalidated_at < DATE_SUB(NOW(), INTERVAL 12 HOUR);
+             `);
   } catch (err) {
     console.error("Error encountered at schema migration: ", err);
   } finally {

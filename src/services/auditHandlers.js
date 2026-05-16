@@ -8,32 +8,33 @@ import {
   authenticate,
 } from "../middlewares.js";
 
-function parseParameters(url) {
+function parseParameters(url, forUsers) {
   const params = new URL(url, "http://localhost").searchParams;
   let conditions = ``;
   const variables = [];
+  let userParam;
 
   try {
     if (params.get("flag_name")) {
       conditions += `flag_name LIKE ?`;
-      variables.push(`%${params.get("flag_name")}%`);
+      variables.push(`%${params.get("flag_name").trim()}%`);
     }
-    if (params.get("user")) {
-      console.log("vedem");
+    if (params.get("user") && forUsers) {
+      userParam = params.get("user").trim();
     }
     if (params.get("action")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}action LIKE ?`;
-      variables.push(`%${params.get("action")}%`);
+      variables.push(`%${params.get("action").trim()}%`);
     }
     if (params.get("changed_at")) {
-      condtions += `${conditions.length > 0 ? " AND " : ""}changed_at LIKE ?`;
-      variables.push(`%${params.get("changed_at")}%`);
+      conditions += `${conditions.length > 0 ? " AND " : ""}changed_at LIKE ?`;
+      variables.push(`%${params.get("changed_at").trim()}%`);
     }
+
+    return { conditions, variables, userParam };
   } catch (err) {
     console.error("Error encountered when parsing parameters: ", err);
     return;
-  } finally {
-    return { conditions, variables };
   }
 }
 
@@ -79,13 +80,17 @@ async function showLogs(req, res) {
 async function filterLogs(req, res, forUsers = false) {
   const user = await isLogged(req);
 
-  const { conditions, variables } = parseParameters(req.url);
+  const { conditions, variables, userParam } = parseParameters(
+    req.url,
+    forUsers,
+  );
 
   try {
     if (!user) {
+      if (conditions.length > 0) conditions = "WHERE " + conditions;
       const [rows] = await db.query(
         `
-          SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE ${conditions} ORDER BY changed_at DESC;
+          SELECT flag_name, user_id, action, changed_at FROM audit_log ${conditions} ORDER BY changed_at DESC;
         `,
         variables,
       );
@@ -96,20 +101,45 @@ async function filterLogs(req, res, forUsers = false) {
     if (forUsers) {
       if (!user.admin) return sendResponse("Unauthorized", 401, res);
 
-      console.log("vedem");
-    } else {
-      variables.shift(user.id);
+      //no user parameter
+      if (!userParam) {
+        if (conditions.length > 0) conditions += " AND ";
+
+        const [rows] = await db.query(
+          `
+          SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id <> 'admin' ORDER BY changed_at DESC;
+        `,
+          variables,
+        );
+        return sendData(rows, res);
+      }
+
+      //with user parameter
+      conditions += `${conditions.length ? " AND " : " "} (u.email LIKE ? OR u.name LIKE ?)`;
+      variables.push(`%${userParam}%`);
+      variables.push(`%${userParam}%`);
       const [rows] = await db.query(
         `
-        SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions + (conditions.length ? " AND" : "")} user_id = ? ORDER BY changed_at DESC;
-        `,
+          SELECT flag_name, action, changed_at FROM audit_log JOIN users ON user_id = id WHERE ${conditions} ORDER BY changed_at DESC;
+      `,
         variables,
       );
 
       return sendData(rows, res);
     }
+
+    variables.push(user.id);
+    if (conditions.lenght > 0) conditions += " AND ";
+    const [rows] = await db.query(
+      `
+      SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id = ? ORDER BY changed_at DESC;
+      `,
+      variables,
+    );
+
+    return sendData(rows, res);
   } catch (err) {
-    serverErr(err);
+    serverErr(err, res);
   }
 }
 
@@ -126,7 +156,6 @@ async function showUsersLogs(req, res) {
 
     sendData(rows, res);
   } catch (err) {
-    console.log("am intrat in paine");
     serverErr(err, res);
   }
 }

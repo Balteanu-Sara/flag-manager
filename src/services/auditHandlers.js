@@ -66,7 +66,7 @@ async function showLogs(req, res) {
 
     const [rows] = await db.query(
       `
-        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ?;
+        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ? ORDER BY changed_at DESC;
       `,
       [user.id],
     );
@@ -84,10 +84,10 @@ async function filterLogs(req, res, forUsers = false) {
 
   try {
     if (!user) {
-      if (conditions.length > 0) conditions = "WHERE " + conditions;
+      if (conditions.length > 0) conditions = conditions + " AND ";
       const [rows] = await db.query(
         `
-          SELECT flag_name, user_id, action, changed_at FROM audit_log ${conditions} ORDER BY changed_at DESC;
+          SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE ${conditions} user_id='admin' ORDER BY changed_at DESC;
         `,
         variables,
       );

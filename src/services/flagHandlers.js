@@ -11,7 +11,7 @@ import {
 } from "../middlewares.js";
 import { createLog } from "./auditHandlers.js";
 
-function parseParameters(url) {
+function parseParameters(url, forUsers = false) {
   const params = new URL(url, "http://localhost").searchParams;
   let conditions = ``;
   const variables = [];
@@ -20,6 +20,9 @@ function parseParameters(url) {
     if (params.get("feature")) {
       conditions += `feature LIKE ?`;
       variables.push(`%${params.get("feature").trim()}%`);
+    }
+    if (params.get("user") && forUsers) {
+      userParam = params.get("user").trim();
     }
     if (params.get("environment")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}environment LIKE ?`;
@@ -57,6 +60,17 @@ async function showFlags(req, res) {
       return sendData(rows, res);
     }
 
+    if (user.admin) {
+      const [rows] = await db.query(
+        `
+          SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ORDER BY created_at DESC;
+        `,
+        [user.id],
+      );
+
+      return sendData(rows, res);
+    }
+
     const [rows] = await db.query(
       `
         SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ? ORDER BY created_at DESC;
@@ -73,14 +87,13 @@ async function showFlags(req, res) {
 async function filterFlags(req, res) {
   const user = await isLogged(req);
 
-  let { conditions, variables } = parseParameters(req.url);
-
   try {
     if (!user) {
-      if (conditions.length > 0) conditions = "WHERE " + conditions;
+      let { conditions, variables } = parseParameters(req.url);
+      if (conditions.length > 0) conditions = conditions + " AND";
       const [rows] = await db.query(
         `
-        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ${conditions} ORDER BY created_at DESC; 
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} user_id='admin' ORDER BY created_at DESC; 
         `,
         variables,
       );
@@ -88,11 +101,25 @@ async function filterFlags(req, res) {
       return sendData(rows, res);
     }
 
+    if (user.admin) {
+      let { conditions, variables } = parseParameters(req.url, true);
+      if (conditions.length) conditions = "WHERE " + conditions;
+      const [rows] = await db.query(
+        `
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags  ${conditions} ORDER BY updated_at DESC; 
+        `,
+        variables,
+      );
+
+      return sendData(rows, res);
+    }
+
+    let { conditions, variables } = parseParameters(req.url);
     variables.unshift(user.id);
     if (conditions.length > 0) conditions = "AND " + conditions;
     const [rows] = await db.query(
       `
-      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions} ORDER BY created_at DESC;
+      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions} ORDER BY updated_at DESC;
       `,
       variables,
     );
@@ -168,6 +195,17 @@ async function showFlag(req, res, name) {
         `
           SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE feature LIKE ?;
           `,
+        [`%${name}%`],
+      );
+
+      return sendData(rows, res);
+    }
+
+    if (user.admin) {
+      const [rows] = await db.query(
+        `
+          SELECT feature, user_id, environment, enabled, created_at, updated_at from flags WHERE feature LIKE ?; 
+        `,
         [`%${name}%`],
       );
 
@@ -286,6 +324,17 @@ async function deleteFlag(req, res, name) {
   if (!user) return;
 
   try {
+    if (user.admin) {
+      const [rows] = await db.query(`SELECT * FROM flags WHERE feature = ?;`, [
+        name,
+      ]);
+
+      if (!rows.length) return notFoundErr(res);
+
+      await db.query(`DELETE FROM flags WHERE feature = ? ;`, [name]);
+
+      return sendResponse(`Flag ${name} has been removed!`, 200, res);
+    }
     const [rows] = await db.query(
       `SELECT * FROM flags WHERE feature = ? AND user_id = ? ;`,
       [name, user.id],

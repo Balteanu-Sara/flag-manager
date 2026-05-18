@@ -67,7 +67,7 @@ async function login(req, res) {
   if (user) return badRequestErr(res);
 
   const body = await parseBody(req);
-  if (!body.hasOwnProperty("email") && !body.hasOwnProperty("password"))
+  if (!body.hasOwnProperty("email") || !body.hasOwnProperty("password"))
     return sendResponse("Email and password are required!", 400, res);
 
   try {
@@ -113,7 +113,6 @@ async function logout(req, res, jti = null) {
 
   try {
     await db.query(`INSERT INTO invalid_tokens(token) VALUES (?);`, [jtiToken]);
-    console.log("gata log out");
 
     if (!jti) sendResponse("Successfully logged out!", 200, res);
   } catch (err) {
@@ -134,11 +133,8 @@ async function deleteAccount(req, res) {
     await logout(req, res, user.jti);
 
     await db.query(`DELETE FROM users WHERE id=? ;`, [user.id]);
-    console.log("sters din users");
     await db.query(`DELETE FROM flags WHERE user_id=? ;`, [user.id]);
-    console.log("sters din flags");
     await db.query(`DELETE FROM audit_log WHERE user_id=? ;`, [user.id]);
-    console.log("sters din audit_log");
 
     sendResponse("User account has been deleted!", 200, res);
   } catch (err) {

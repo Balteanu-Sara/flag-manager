@@ -80,10 +80,7 @@ async function showLogs(req, res) {
 async function filterLogs(req, res, forUsers = false) {
   const user = await isLogged(req);
 
-  const { conditions, variables, userParam } = parseParameters(
-    req.url,
-    forUsers,
-  );
+  let { conditions, variables, userParam } = parseParameters(req.url, forUsers);
 
   try {
     if (!user) {
@@ -107,7 +104,7 @@ async function filterLogs(req, res, forUsers = false) {
 
         const [rows] = await db.query(
           `
-          SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id <> 'admin' ORDER BY changed_at DESC;
+          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions} user_id <> 'admin' ORDER BY changed_at DESC;
         `,
           variables,
         );
@@ -115,12 +112,12 @@ async function filterLogs(req, res, forUsers = false) {
       }
 
       //with user parameter
-      conditions += `${conditions.length ? " AND " : " "} (u.email LIKE ? OR u.name LIKE ?)`;
+      conditions += `${conditions.length ? " AND " : ""} (email LIKE ? OR name LIKE ?)`;
       variables.push(`%${userParam}%`);
       variables.push(`%${userParam}%`);
       const [rows] = await db.query(
         `
-          SELECT flag_name, action, changed_at FROM audit_log JOIN users ON user_id = id WHERE ${conditions} ORDER BY changed_at DESC;
+          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions} ORDER BY changed_at DESC;
       `,
         variables,
       );
@@ -129,7 +126,7 @@ async function filterLogs(req, res, forUsers = false) {
     }
 
     variables.push(user.id);
-    if (conditions.lenght > 0) conditions += " AND ";
+    if (conditions.length > 0) conditions += " AND ";
     const [rows] = await db.query(
       `
       SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id = ? ORDER BY changed_at DESC;
@@ -151,7 +148,7 @@ async function showUsersLogs(req, res) {
 
   try {
     const [rows] = await db.query(`
-        SELECT * FROM audit_log WHERE user_id <> 'admin' ORDER BY changed_at DESC;
+        SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE user_id <> 'admin' ORDER BY changed_at DESC;
       `);
 
     sendData(rows, res);

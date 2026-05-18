@@ -23,7 +23,7 @@ function parseParameters(url) {
     }
     if (params.get("environment")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}environment LIKE ?`;
-      variables.push(params.get("environment").trim());
+      variables.push(`%${params.get("environment").trim()}%`);
     }
     if (params.get("enabled")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}enabled = ?`;
@@ -73,13 +73,14 @@ async function showFlags(req, res) {
 async function filterFlags(req, res) {
   const user = await isLogged(req);
 
-  const { conditions, variables } = parseParameters(req.url);
+  let { conditions, variables } = parseParameters(req.url);
 
   try {
     if (!user) {
+      if (conditions.length > 0) conditions = "WHERE " + conditions;
       const [rows] = await db.query(
         `
-        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} ORDER BY created_at DESC; 
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ${conditions} ORDER BY created_at DESC; 
         `,
         variables,
       );
@@ -87,10 +88,11 @@ async function filterFlags(req, res) {
       return sendData(rows, res);
     }
 
-    variables.push(user.id);
+    variables.unshift(user.id);
+    if (conditions.length > 0) conditions = "AND " + conditions;
     const [rows] = await db.query(
       `
-      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions + (conditions.length ? " AND" : "")} user_id = ? ORDER BY created_at DESC;
+      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions} ORDER BY created_at DESC;
       `,
       variables,
     );

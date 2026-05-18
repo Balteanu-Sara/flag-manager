@@ -62,7 +62,6 @@ async function isLogged(req) {
 
     return user;
   } catch (err) {
-    console.error(err);
     return null;
   }
 }
@@ -87,7 +86,7 @@ async function authenticate(req, res) {
     );
 
     if (rows.length) {
-      sendResponse("Token in invalid!", 401, res);
+      sendResponse("Token is invalid!", 401, res);
       return null;
     }
 

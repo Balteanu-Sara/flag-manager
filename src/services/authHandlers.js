@@ -120,10 +120,6 @@ async function logout(req, res, jti = null) {
   }
 }
 
-function showMetadata(req, res) {}
-
-function changeMetadata(req, res, field) {}
-
 async function deleteAccount(req, res) {
   const user = await authenticate(req, res);
 
@@ -142,12 +138,4 @@ async function deleteAccount(req, res) {
   }
 }
 
-export {
-  registerUser,
-  createAdminRequest,
-  login,
-  logout,
-  showMetadata,
-  changeMetadata,
-  deleteAccount,
-};
+export { registerUser, createAdminRequest, login, logout, deleteAccount };

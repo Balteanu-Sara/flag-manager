@@ -1,6 +1,7 @@
 import { handleFlagRoutes } from "./routes/flagRoutes.js";
 import { handleAuthRoutes } from "./routes/authRoutes.js";
 import { handleAuditRoutes } from "./routes/auditRoutes.js";
+import { handleOtherRoutes } from "./routes/otherRoutes.js";
 import { badRequestErr } from "./middlewares.js";
 
 function router(req, res) {
@@ -20,6 +21,15 @@ function router(req, res) {
     pathname.toLowerCase() === "/audit-log"
   )
     return handleAuditRoutes(req, res);
+
+  if (
+    pathname.startsWith("/users?") ||
+    pathname.startsWith("/users/") ||
+    pathname.toLowerCase() === "/users" ||
+    pathname.toLowerCase() === "/account" ||
+    pathname.toLowerCase() === "/health"
+  )
+    return handleOtherRoutes(req, res);
 
   return badRequestErr(res);
 }

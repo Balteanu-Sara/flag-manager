@@ -100,11 +100,11 @@ async function filterLogs(req, res, forUsers = false) {
 
       //no user parameter
       if (!userParam) {
-        if (conditions.length > 0) conditions += " AND ";
+        if (conditions.length > 0) conditions = "WHERE " + conditions;
 
         const [rows] = await db.query(
           `
-          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions} user_id <> 'admin' ORDER BY changed_at DESC;
+          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ${conditions} ORDER BY changed_at DESC;
         `,
           variables,
         );
@@ -148,7 +148,7 @@ async function showUsersLogs(req, res) {
 
   try {
     const [rows] = await db.query(`
-        SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE user_id <> 'admin' ORDER BY changed_at DESC;
+        SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ORDER BY changed_at DESC;
       `);
 
     sendData(rows, res);

@@ -8,6 +8,7 @@ import {
   serverErr,
   parseBody,
   sendResponse,
+  badRequestErr,
 } from "../middlewares.js";
 import { createLog } from "./auditHandlers.js";
 
@@ -320,14 +321,25 @@ async function changeMetadata(req, res, name) {
 
 async function deleteFlag(req, res, name) {
   const user = await authenticate(req, res);
-
   if (!user) return;
 
   try {
     if (user.admin) {
-      const [rows] = await db.query(`SELECT * FROM flags WHERE feature = ?;`, [
-        name,
-      ]);
+      const { user_info } = await parseBody(req);
+      if (!user_info.length) {
+        console.log("bad request de aici");
+        return badRequestErr(res);
+      }
+
+      const variables = [];
+      variables.push(name);
+      variables.push(user_info);
+      variables.push(`%${user_info}%`);
+
+      const [rows] = await db.query(
+        `SELECT * FROM flags join users on flags.user_id=users.id WHERE feature = ? AND (user_id= ? OR email LIKE ?) ;`,
+        variables,
+      );
 
       if (!rows.length) return notFoundErr(res);
 

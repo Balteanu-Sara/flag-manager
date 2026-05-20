@@ -333,8 +333,8 @@ async function deleteFlag(req, res, name) {
 
       const variables = [];
       variables.push(name);
-      variables.push(user_info);
-      variables.push(`%${user_info}%`);
+      variables.push(user_info.trim());
+      variables.push(`%${user_info.trim().toLowerCase()}%`);
 
       const [rows] = await db.query(
         `SELECT * FROM flags join users on flags.user_id=users.id WHERE feature = ? AND (user_id= ? OR email LIKE ?) ;`,

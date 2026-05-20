@@ -24,7 +24,11 @@ async function registerUser(req, res, admin = false) {
     return sendResponse("Email, name and password are required!", 400, res);
   }
 
-  if (body.password.length < 13)
+  const emailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailFormat.test(body.email.trim().toLowerCase()))
+    return sendResponse("Email is not valid", 400, res);
+
+  if (body.password.trim().length < 13)
     return sendResponse("Password must be at least 13 characters.", 400, res);
 
   try {
@@ -32,7 +36,7 @@ async function registerUser(req, res, admin = false) {
       `
       SELECT * FROM users WHERE email = ?;
       `,
-      [body.email],
+      [body.email.trim().toLowerCase()],
     );
 
     if (rows.length > 0)
@@ -47,7 +51,12 @@ async function registerUser(req, res, admin = false) {
       `
       INSERT INTO users(id, name, admin, email, password) VALUES ('${uuidv4()}', ?, ?, ?, ?);
       `,
-      [body.name, admin, body.email, hashedPassword],
+      [
+        body.name.trim(),
+        admin,
+        body.email.trim().toLowerCase(),
+        hashedPassword,
+      ],
     );
 
     return sendResponse(
@@ -75,7 +84,7 @@ async function login(req, res) {
       `
         SELECT * FROM users WHERE email = ?
       `,
-      [body.email],
+      [body.email.trim().toLowerCase()],
     );
     if (rows.length === 0) return sendResponse("Email is invalid", 400, res);
 
@@ -86,7 +95,7 @@ async function login(req, res) {
       {
         jti: uuidv4(),
         id: rows[0].id,
-        email: rows[0].email,
+        email: rows[0].email.trim().toLowerCase(),
         admin: rows[0].admin,
       },
       process.env.JWT_SECRET_KEY,

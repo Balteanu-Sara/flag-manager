@@ -20,7 +20,7 @@ function parseParameters(url, forUsers) {
       variables.push(`%${params.get("flag_name").trim()}%`);
     }
     if (params.get("user") && forUsers) {
-      userParam = params.get("user").trim();
+      userParam = params.get("user").trim().toLowerCase();
     }
     if (params.get("action")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}action LIKE ?`;

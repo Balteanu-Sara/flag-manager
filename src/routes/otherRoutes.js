@@ -15,7 +15,7 @@ function handleOtherRoutes(req, res) {
   subpaths.shift();
 
   if (subpaths[0].startsWith("users") && method === "GET") {
-    const params = new URL("http://localhost", req.url).search;
+    const params = new URL(req.url, "http://localhost").search;
 
     if (subpaths.length === 1) {
       if (!params) return showUsers(req, res);
@@ -23,7 +23,8 @@ function handleOtherRoutes(req, res) {
     }
 
     if (subpaths.length === 2) {
-      const user_id = decodeURIComponent(subpaths[1]).toLowerCase;
+      const user_id = decodeURIComponent(subpaths[1]).toLowerCase();
+      console.log(user_id);
       return showUser(req, res, user_id);
     }
   }

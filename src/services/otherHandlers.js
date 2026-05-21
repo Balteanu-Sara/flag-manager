@@ -9,11 +9,93 @@ import {
 } from "../middlewares.js";
 import { logout } from "./authHandlers.js";
 
-async function showUsers(req, res) {}
+function parseParameters(req) {
+  const params = new URL(req.url, "http://localhost").searchParams;
+  let parameters = "";
+  const variables = [];
 
-async function showUser(req, res) {}
+  if (params.get("name")) {
+    parameters = "name LIKE ?";
+    variables.push(`%${params.get("name").trim()}%`);
+  }
 
-async function filterUsers(req, res) {}
+  if (params.get("email")) {
+    parameteres += parameteres.length > 0 ? "AND email LIKE ?" : "email LIKE ?";
+    variables.push(`%${params.get("email").trim().toLowerCase()}%`);
+  }
+
+  return { parameters, variables };
+}
+
+async function showUsers(req, res) {
+  const user = await authenticate(req, res);
+
+  if (!user) return;
+  if (user.admin === 0) {
+    sendResponse("Unauthorized", 401, res);
+    return;
+  }
+
+  try {
+    const [rows] = await db.query(`
+        SELECT id, name, email, created_at FROM users WHERE admin <> true ORDER BY created_at DESC;
+      `);
+
+    sendData(rows, res);
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
+
+async function showUser(req, res, user_id) {
+  const user = await authenticate(req, res);
+  console.log(user_id);
+
+  if (!user) return;
+  if (user.admin === 0) {
+    sendResponse("Unauthorized", 401, res);
+    return;
+  }
+
+  try {
+    const [rows] = await db.query(
+      `
+        SELECT id, name, email,created_at FROM users WHERE id = ? ORDER BY created_at DESC;
+      `,
+      [user_id],
+    );
+
+    sendData(rows, res);
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
+
+async function filterUsers(req, res) {
+  const { parameters, variables } = parseParameters(req);
+  console.log(parameters, variables);
+
+  if (!parameters.length) {
+    await showUsers(req, res);
+    return;
+  }
+  const user = await authenticate(req, res);
+  if (!user) return;
+  if (user.admin === 0) {
+    sendResponse("Unauthorized", 401, res);
+  }
+
+  try {
+    const [rows] = await db.query(
+      `
+        SELECT id, name, email, created_at FROM users WHERE ${parameters} and admin <> true ORDER BY created_at DESC;
+      `,
+      variables,
+    );
+  } catch (err) {
+    serverErr(err, res);
+  }
+}
 
 async function showMetadata(req, res) {
   const user = await authenticate(req, res);

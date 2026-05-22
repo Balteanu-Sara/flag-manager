@@ -128,6 +128,8 @@ async function changeMetadata(req, res) {
 
   if (!user) return;
   const body = await parseBody(req);
+  if (!body) return sendResponse("Invalid JSON body", 400, res);
+
   let columns = "";
   const variables = [];
 

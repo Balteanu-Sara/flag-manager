@@ -19,6 +19,7 @@ async function registerUser(req, res, admin = false) {
   if (user) return badRequestErr(res);
 
   const body = await parseBody(req);
+  if (!body) return sendResponse("Invalid JSON body", 400, res);
 
   if (!body.password || !body.email || !body.name) {
     return sendResponse("Email, name and password are required!", 400, res);
@@ -76,6 +77,7 @@ async function login(req, res) {
   if (user) return badRequestErr(res);
 
   const body = await parseBody(req);
+  if (!body) return sendResponse("Invalid JSON body", 400, res);
   if (!body.hasOwnProperty("email") || !body.hasOwnProperty("password"))
     return sendResponse("Email and password are required!", 400, res);
 

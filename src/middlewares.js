@@ -28,7 +28,7 @@ function badRequestErr(res) {
   sendResponse("Bad request", 400, res);
 }
 
-async function parseBody(req) {
+function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
 
@@ -39,7 +39,7 @@ async function parseBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (err) {
-        reject(err);
+        resolve(null);
       }
     });
   });

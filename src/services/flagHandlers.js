@@ -138,6 +138,7 @@ async function createFlag(req, res) {
 
   try {
     const body = await parseBody(req);
+    if (!body) return sendResponse("Invalid JSON body", 400, res);
     if (!body.hasOwnProperty("feature"))
       return sendResponse("Feature key is required!", 404, res);
     const variables = [body.feature, user.id];
@@ -231,6 +232,7 @@ async function changeMetadata(req, res, name) {
   const body = await parseBody(req);
 
   if (!user) return;
+  if (!body) return sendResponse("Invalid JSON body", 400, res);
 
   try {
     const [rows] = await db.query(
@@ -325,19 +327,18 @@ async function deleteFlag(req, res, name) {
 
   try {
     if (user.admin) {
-      const { user_info } = await parseBody(req);
-      if (!user_info.length) {
-        console.log("bad request de aici");
-        return badRequestErr(res);
-      }
+      const body = await parseBody(req);
+      if (!body) return sendResponse("Invalid JSON body", 400, res);
+
+      if (!body.get("user_info")) return badRequestErr(res);
 
       const variables = [];
       variables.push(name);
-      variables.push(user_info.trim());
-      variables.push(`%${user_info.trim().toLowerCase()}%`);
+      variables.push(body.get("user_info").trim());
+      variables.push(`%${body.get("user_info").trim().toLowerCase()}%`);
 
       const [rows] = await db.query(
-        `SELECT * FROM flags join users on flags.user_id=users.id WHERE feature = ? AND (user_id= ? OR email LIKE ?) ;`,
+        `SELECT * FROM flags join users on flags.user_id=users.id WHERE feature = ? AND (user_id = ? OR email LIKE ?) ;`,
         variables,
       );
 

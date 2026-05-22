@@ -24,7 +24,6 @@ function handleOtherRoutes(req, res) {
 
     if (subpaths.length === 2) {
       const user_id = decodeURIComponent(subpaths[1]).toLowerCase();
-      console.log(user_id);
       return showUser(req, res, user_id);
     }
   }

@@ -20,8 +20,14 @@ function parseParameters(req) {
   }
 
   if (params.get("email")) {
-    parameteres += parameteres.length > 0 ? "AND email LIKE ?" : "email LIKE ?";
+    parameters += parameters.length > 0 ? "AND email LIKE ?" : "email LIKE ?";
     variables.push(`%${params.get("email").trim().toLowerCase()}%`);
+  }
+
+  if (params.get("created_at")) {
+    parameters +=
+      parameters.length > 0 ? "AND created_at LIKE ?" : "created_at LIKE ?";
+    variables.push(`%${params.get("created_at").trim()}%`);
   }
 
   return { parameters, variables };
@@ -49,7 +55,6 @@ async function showUsers(req, res) {
 
 async function showUser(req, res, user_id) {
   const user = await authenticate(req, res);
-  console.log(user_id);
 
   if (!user) return;
   if (user.admin === 0) {
@@ -92,6 +97,8 @@ async function filterUsers(req, res) {
       `,
       variables,
     );
+
+    sendData(rows, res);
   } catch (err) {
     serverErr(err, res);
   }

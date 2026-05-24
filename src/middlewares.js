@@ -5,7 +5,7 @@ dotenv.config();
 
 function sendData(data, res) {
   res.writeHead(200, { "Content-Type": "application/json" });
-  res.write(JSON.stringify({ data }));
+  res.write(JSON.stringify(data));
   res.end();
 }
 

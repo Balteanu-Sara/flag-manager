@@ -55,31 +55,42 @@ async function showFlags(req, res) {
   try {
     if (!user) {
       const [rows] = await db.query(`
-                SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE user_id = 'admin' ORDER BY created_at DESC; 
+                SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE user_id = 'admin' ORDER BY created_at DESC LIMIT 50; 
                     `);
+      const [[{ total_flags }]] = await db.query(`
+            SELECT COUNT(*) as total_flags FROM flags WHERE user_id = 'admin';
+        `);
 
-      return sendData(rows, res);
+      return sendData({ total: total_flags, data: rows }, res);
     }
 
     if (user.admin) {
       const [rows] = await db.query(
         `
-          SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ORDER BY created_at DESC;
+          SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ORDER BY created_at DESC LIMIT 50;
         `,
-        [user.id],
       );
+      const [[{ total_flags }]] = await db.query(`
+          SELECT COUNT(*) as total_flags FROM flags;
+        `);
 
-      return sendData(rows, res);
+      return sendData({ total: total_flags, data: rows }, res);
     }
 
     const [rows] = await db.query(
       `
-        SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ? ORDER BY created_at DESC;
+        SELECT feature, environment, enabled, created_at, updated_at FROM flags where user_id = ? ORDER BY created_at DESC LIMIT 50;
       `,
       [user.id],
     );
+    const [[{ total_flags }]] = await db.query(
+      `
+          SELECT COUNT(*) as total_flags FROM flags where user_id = ?;
+        `,
+      [user.id],
+    );
 
-    sendData(rows, res);
+    sendData({ total: total_flags, data: rows }, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -94,12 +105,18 @@ async function filterFlags(req, res) {
       if (conditions.length > 0) conditions = conditions + " AND";
       const [rows] = await db.query(
         `
-        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} user_id='admin' ORDER BY created_at DESC; 
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE ${conditions} user_id='admin' ORDER BY created_at DESC LIMIT 75; 
+        `,
+        variables,
+      );
+      const [[{ total_flags }]] = await db.query(
+        `
+          SELECT COUNT(*) as total_flags FROM flags WHERE ${conditions} user_id='admin';
         `,
         variables,
       );
 
-      return sendData(rows, res);
+      return sendData({ total: total_flags, data: rows }, res);
     }
 
     if (user.admin) {
@@ -107,12 +124,18 @@ async function filterFlags(req, res) {
       if (conditions.length) conditions = "WHERE " + conditions;
       const [rows] = await db.query(
         `
-        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags  ${conditions} ORDER BY updated_at DESC; 
+        SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags ${conditions} ORDER BY updated_at DESC LIMIT 75; 
+        `,
+        variables,
+      );
+      const [[{ total_flags }]] = await db.query(
+        `
+          SELECT COUNT(*) as total_flags FROM flags ${conditions};
         `,
         variables,
       );
 
-      return sendData(rows, res);
+      return sendData({ total: total_flags, data: rows }, res);
     }
 
     let { conditions, variables } = parseParameters(req.url);
@@ -120,12 +143,18 @@ async function filterFlags(req, res) {
     if (conditions.length > 0) conditions = "AND " + conditions;
     const [rows] = await db.query(
       `
-      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions} ORDER BY updated_at DESC;
+      SELECT feature, environment, enabled, created_at, updated_at FROM flags WHERE user_id = ? ${conditions} ORDER BY updated_at DESC LIMIT 75;
       `,
       variables,
     );
+    const [[{ total_flags }]] = await db.query(
+      `
+          SELECT COUNT(*) as total_flags FROM flags WHERE user_id = ? ${conditions};
+        `,
+      variables,
+    );
 
-    sendData(rows, res);
+    sendData({ total: total_flags, data: rows }, res);
   } catch (err) {
     serverErr(err, res);
   }

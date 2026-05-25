@@ -59,14 +59,14 @@ async function showLogs(req, res) {
   try {
     if (!user) {
       const [rows] = await db.query(`
-                SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE user_id = 'admin' ORDER BY changed_at DESC;
+                SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE user_id = 'admin' ORDER BY changed_at DESC LIMIT 100;
                 `);
       return sendData(rows, res);
     }
 
     const [rows] = await db.query(
       `
-        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ? ORDER BY changed_at DESC;
+        SELECT flag_name, action, changed_at FROM audit_log WHERE user_id = ? ORDER BY changed_at DESC LIMIT 100;
       `,
       [user.id],
     );
@@ -87,7 +87,7 @@ async function filterLogs(req, res, forUsers = false) {
       if (conditions.length > 0) conditions = conditions + " AND ";
       const [rows] = await db.query(
         `
-          SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE ${conditions} user_id='admin' ORDER BY changed_at DESC;
+          SELECT flag_name, user_id, action, changed_at FROM audit_log WHERE ${conditions} user_id='admin' ORDER BY changed_at DESC LIMIT 200;
         `,
         variables,
       );
@@ -104,11 +104,18 @@ async function filterLogs(req, res, forUsers = false) {
 
         const [rows] = await db.query(
           `
-          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ${conditions} ORDER BY changed_at DESC;
+          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ${conditions} ORDER BY changed_at DESC LIMIT 200;
         `,
           variables,
         );
-        return sendData(rows, res);
+
+        const [[{ total_audit_logs }]] = await db.query(
+          `
+          SELECT COUNT(*) as total_audit_logs FROM audit_log JOIN users ON audit_log.user_id = users.id ${conditions};
+        `,
+          variables,
+        );
+        return sendData({ total: total_audit_logs, data: rows }, res);
       }
 
       //with user parameter
@@ -117,19 +124,25 @@ async function filterLogs(req, res, forUsers = false) {
       variables.push(`%${userParam}%`);
       const [rows] = await db.query(
         `
-          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions} ORDER BY changed_at DESC;
+          SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions} ORDER BY changed_at DESC LIMIT 200;
       `,
         variables,
       );
+      const [[{ total_audit_logs }]] = await db.query(
+        `
+          SELECT COUNT(*) as total_audit_logs FROM audit_log JOIN users ON audit_log.user_id = users.id WHERE ${conditions};
+        `,
+        variables,
+      );
 
-      return sendData(rows, res);
+      return sendData({ total: total_audit_logs, data: rows }, res);
     }
 
     variables.push(user.id);
     if (conditions.length > 0) conditions += " AND ";
     const [rows] = await db.query(
       `
-      SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id = ? ORDER BY changed_at DESC;
+      SELECT flag_name, action, changed_at FROM audit_log WHERE ${conditions} user_id = ? ORDER BY changed_at DESC LIMIT 200;
       `,
       variables,
     );
@@ -148,10 +161,13 @@ async function showUsersLogs(req, res) {
 
   try {
     const [rows] = await db.query(`
-        SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ORDER BY changed_at DESC;
+        SELECT flag_name, email, action, changed_at FROM audit_log JOIN users ON audit_log.user_id = users.id ORDER BY changed_at DESC LIMIT 150;
+      `);
+    const [[{ total_audit_logs }]] = await db.query(`
+        SELECT COUNT(*) as total_audit_logs FROM audit_log JOIN users ON audit_log.user_id = users.id;
       `);
 
-    sendData(rows, res);
+    sendData({ total: total_audit_logs, data: rows }, res);
   } catch (err) {
     serverErr(err, res);
   }

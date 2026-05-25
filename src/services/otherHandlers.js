@@ -6,6 +6,7 @@ import {
   sendResponse,
   authenticate,
   parseBody,
+  isLogged,
 } from "../middlewares.js";
 import { logout } from "./authHandlers.js";
 
@@ -44,10 +45,14 @@ async function showUsers(req, res) {
 
   try {
     const [rows] = await db.query(`
-        SELECT id, name, email, created_at FROM users WHERE admin <> true ORDER BY created_at DESC;
+        SELECT id, name, email, created_at FROM users WHERE admin <> true ORDER BY created_at DESC LIMIT 250;
       `);
 
-    sendData(rows, res);
+    const [[{ total_users }]] = await db.query(`
+      SELECT COUNT(*) as total_users FROM users WHERE admin <> true; 
+      `);
+
+    sendData({ total: total_users, data: rows }, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -70,7 +75,20 @@ async function showUser(req, res, user_id) {
       [user_id],
     );
 
-    sendData(rows, res);
+    const [[{ total_flags }]] = await db.query(
+      `
+        SELECT COUNT(*) as total_flags FROM flags WHERE user_id = ?;
+      `,
+      [user_id],
+    );
+    const [[{ total_audit_logs }]] = await db.query(
+      `
+        SELECT COUNT(*) AS total_audit_logs FROM audit_log WHERE user_id = ?;
+      `,
+      [user_id],
+    );
+
+    sendData({ data: rows, total_flags, total_audit_logs }, res);
   } catch (err) {
     serverErr(err, res);
   }
@@ -78,7 +96,6 @@ async function showUser(req, res, user_id) {
 
 async function filterUsers(req, res) {
   const { parameters, variables } = parseParameters(req);
-  console.log(parameters, variables);
 
   if (!parameters.length) {
     await showUsers(req, res);
@@ -93,12 +110,19 @@ async function filterUsers(req, res) {
   try {
     const [rows] = await db.query(
       `
-        SELECT id, name, email, created_at FROM users WHERE ${parameters} and admin <> true ORDER BY created_at DESC;
+        SELECT id, name, email, created_at FROM users WHERE ${parameters} and admin <> true ORDER BY created_at DESC LIMIT 300;
       `,
       variables,
     );
 
-    sendData(rows, res);
+    const [[{ total_users }]] = await db.query(
+      `
+      SELECT COUNT(*) FROM users WHERE ${parameters} and admin <> true;
+      `,
+      variables,
+    );
+
+    sendData({ total: total_users, data: rows }, res);
   } catch (err) {
     serverErr(err, res);
   }

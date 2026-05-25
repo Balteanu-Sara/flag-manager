@@ -237,7 +237,50 @@ async function deleteAccount(req, res) {
   }
 }
 
-async function checkHealth(req, res) {}
+async function checkHealth(req, res) {
+  const user = await isLogged(req, res);
+
+  let databaseStatus = "ok";
+  let statusCode = 200;
+
+  try {
+    await db.query("SELECT 1;");
+  } catch {
+    statusCode = 503;
+    databaseStatus = "unavailable";
+  }
+  const response = {
+    status: databaseStatus,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (!user) {
+    res.writeHead(statusCode, { "Content-Type": "application/json" });
+    res.write(JSON.stringify(response));
+    res.end();
+    return;
+  }
+
+  response.user = { email: user.email, admin: user.admin };
+  if (user.admin && statusCode === 200) {
+    const [[{ total_users }]] = await db.query(`
+        SELECT COUNT(*) as total_users FROM users; 
+      `);
+    const [[{ total_flags }]] = await db.query(`
+        SELECT COUNT(*) as total_flags FROM flags;
+      `);
+    const [[{ total_audit_logs }]] = await db.query(`
+        SELECT COUNT(*) as total_audit_logs FROM audit_log;
+      `);
+
+    response.stats = { total_users, total_flags, total_audit_logs };
+  }
+
+  res.writeHead(statusCode, { "Content-Type": "application/json" });
+  res.write(JSON.stringify(response));
+  res.end();
+  return;
+}
 
 export {
   showUsers,

@@ -4,7 +4,6 @@
 
 Flagger is a lightweight, production-ready REST API for managing feature flags, built with raw Node.js. Control what your users see without touching your codebase. Flagger lets you create, toggle, and manage feature flags across environments. Flip a flag and a feature goes live, no redeployment needed. Every change is logged in a full audit trail so you always know what changed, when, and by whom.
 
----
 
 ## Features
 
@@ -17,7 +16,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 - Health endpoint with system stats
 - Raw Node.js `http` module
 
----
 
 ## Technologies & Dependencies
 
@@ -26,7 +24,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 - **Auth** : `jsonwebtoken` + `bcrypt`
 - **DB Driver** : `mysql2`
 
----
 
 ## Endpoints
 
@@ -73,7 +70,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 | ------ | --------- | -------- | -------------------------------------------------- |
 | GET    | `/health` | Optional | API and DB status, returns system stats for admins |
 
----
 
 ## Flag Visibility
 
@@ -83,7 +79,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 | Logged in | Own flags                |
 | Admin     | All flags from all users |
 
----
 
 ## Authentication
 
@@ -100,7 +95,6 @@ Authorization: Bearer your.jwt.token
 
 Tokens expire after **12 hours**.
 
----
 
 ## Security
 
@@ -110,7 +104,6 @@ Tokens expire after **12 hours**.
 - Input validation on all write endpoints
 - Passwords and sensitive fields never returned in API responses
 
----
 
 ## Getting Started
 

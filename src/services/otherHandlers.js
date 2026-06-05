@@ -159,11 +159,12 @@ async function changeMetadata(req, res) {
 
   try {
     if (body.hasOwnProperty("email")) {
+      const email = body.email.trim().toLowerCase();
       const [rows] = await db.query(
         `
           SELECT * FROM users WHERE email = ?;
         `,
-        [body.email.trim().toLowerCase()],
+        [email],
       );
 
       if (rows.length > 0)

@@ -6,11 +6,13 @@ import { badRequestErr } from "./middlewares.js";
 
 function router(req, res) {
   const pathname = req.url;
+  console.log(pathname);
 
   if (
     pathname.startsWith("/flags?") ||
     pathname.startsWith("/flags/") ||
-    pathname.toLowerCase() === "/flags"
+    pathname.toLowerCase() === "/flags" ||
+    pathname.toLowerCase() === "/"
   )
     return handleFlagRoutes(req, res);
   if (req.url.split("/")[1].toLowerCase() === "auth")

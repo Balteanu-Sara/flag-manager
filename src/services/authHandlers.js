@@ -33,11 +33,13 @@ async function registerUser(req, res, admin = false) {
     return sendResponse("Password must be at least 13 characters.", 400, res);
 
   try {
+    const email = body.email.trim().toLowerCase();
+    const name = body.name.trim();
     const [rows] = await db.query(
       `
       SELECT * FROM users WHERE email = ?;
       `,
-      [body.email.trim().toLowerCase()],
+      [email],
     );
 
     if (rows.length > 0)
@@ -52,12 +54,7 @@ async function registerUser(req, res, admin = false) {
       `
       INSERT INTO users(id, name, admin, email, password) VALUES ('${uuidv4()}', ?, ?, ?, ?);
       `,
-      [
-        body.name.trim(),
-        admin,
-        body.email.trim().toLowerCase(),
-        hashedPassword,
-      ],
+      [name, admin, email, hashedPassword],
     );
 
     return sendResponse(
@@ -82,12 +79,14 @@ async function login(req, res) {
     return sendResponse("Email and password are required!", 400, res);
 
   try {
+    const email = body.email.trim().toLowerCase();
     const [rows] = await db.query(
       `
-        SELECT * FROM users WHERE email = ?
+        SELECT * FROM users WHERE email = ?;
       `,
-      [body.email.trim().toLowerCase()],
+      [email],
     );
+    console.log(rows);
     if (rows.length === 0) return sendResponse("Email is invalid", 400, res);
 
     const isUser = await bcrypt.compare(body.password, rows[0].password);
@@ -97,7 +96,7 @@ async function login(req, res) {
       {
         jti: uuidv4(),
         id: rows[0].id,
-        email: rows[0].email.trim().toLowerCase(),
+        email: email,
         admin: rows[0].admin,
       },
       process.env.JWT_SECRET_KEY,

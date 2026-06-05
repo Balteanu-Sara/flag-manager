@@ -29,9 +29,19 @@ function parseParameters(url, forUsers = false) {
       conditions += `${conditions.length > 0 ? " AND " : ""}environment LIKE ?`;
       variables.push(`%${params.get("environment").trim()}%`);
     }
-    if (params.get("enabled")) {
+    if (params.has("enabled")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}enabled = ?`;
-      variables.push(params.get("enabled").trim() === "true" ? 1 : 0);
+      if (
+        params.get("enabled").trim() === "true" ||
+        params.get("enabled").trim() === "1"
+      )
+        variables.push(1);
+      else if (
+        params.get("enabled").trim() === "false" ||
+        params.get("enabled").trim() === "0"
+      )
+        variables.push(0);
+      else variables.push(params.get("enabled"));
     }
     if (params.get("created_at")) {
       conditions += `${conditions.length > 0 ? " AND " : ""}created_at LIKE ?`;

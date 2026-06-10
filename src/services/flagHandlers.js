@@ -234,7 +234,7 @@ async function showFlag(req, res, name) {
     if (!user) {
       const [rows] = await db.query(
         `
-          SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE feature LIKE ?;
+          SELECT feature, user_id, environment, enabled, created_at, updated_at FROM flags WHERE feature LIKE ? AND user_id = 'admin';
           `,
         [`%${name}%`],
       );

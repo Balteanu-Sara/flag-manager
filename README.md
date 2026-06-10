@@ -4,7 +4,6 @@
 
 Flagger is a lightweight, production-ready REST API for managing feature flags, built with raw Node.js. Control what your users see without touching your codebase. Flagger lets you create, toggle, and manage feature flags across environments. Flip a flag and a feature goes live, no redeployment needed. Every change is logged in a full audit trail so you always know what changed, when, and by whom.
 
-
 ## Features
 
 - Feature flag CRUD across environments (`development`, `staging`, `production`)
@@ -16,6 +15,7 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 - Health endpoint with system stats
 - Raw Node.js `http` module
 
+## [Demo](https://flagger-823039407907.us-central1.run.app)
 
 ## Technologies & Dependencies
 
@@ -23,7 +23,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 - **Database** : MySQL 8.0 (Cloud SQL on Google Cloud)
 - **Auth** : `jsonwebtoken` + `bcrypt`
 - **DB Driver** : `mysql2`
-
 
 ## Endpoints
 
@@ -70,7 +69,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 | ------ | --------- | -------- | -------------------------------------------------- |
 | GET    | `/health` | Optional | API and DB status, returns system stats for admins |
 
-
 ## Flag Visibility
 
 | User      | Sees                     |
@@ -78,7 +76,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 | Anonymous | Public flags only        |
 | Logged in | Own flags                |
 | Admin     | All flags from all users |
-
 
 ## Authentication
 
@@ -95,7 +92,6 @@ Authorization: Bearer your.jwt.token
 
 Tokens expire after **12 hours**.
 
-
 ## Security
 
 - Passwords hashed with **bcrypt**
@@ -103,7 +99,6 @@ Tokens expire after **12 hours**.
 - JWT tokens **blacklisted on logout**, immediate invalidation
 - Input validation on all write endpoints
 - Passwords and sensitive fields never returned in API responses
-
 
 ## Getting Started
 

@@ -15,8 +15,6 @@ Flagger is a lightweight, production-ready REST API for managing feature flags, 
 - Health endpoint with system stats
 - Raw Node.js `http` module
 
-## [Demo](https://flagger-823039407907.us-central1.run.app)
-
 ## Technologies & Dependencies
 
 - **Runtime** : Node.js v20+
